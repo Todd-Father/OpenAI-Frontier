@@ -13,7 +13,7 @@ This session focused on preparing for a new partnership with OpenAI Frontier by 
 
 ## Context
 
-Our company has been asked to help with a new partnership with OpenAI Frontier. The goal is to:
+Large organizations are creating a partnership with OpenAI Frontier. To help me get up to speed my goal is to:
 
 1. Understand what security requirements OpenAI Frontier will have
 2. Prepare answers to common security questions
