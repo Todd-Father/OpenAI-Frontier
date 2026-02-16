@@ -1,0 +1,47 @@
+name: Daily OpenAI Frontier Digest
+
+on:
+  schedule:
+    # Runs at 7:00 AM EST (12:00 UTC) Monday-Friday
+    # Note: Adjust for daylight saving time if needed
+    # EST (winter): 7am EST = 12pm UTC
+    # EDT (summer): 7am EDT = 11am UTC
+    - cron: '0 12 * * 1-5'
+
+  workflow_dispatch:  # Allow manual trigger for testing
+
+jobs:
+  generate-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          pip install -r requirements.txt
+
+      - name: Generate and send digest
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+        run: |
+          cd scripts
+          python generate_digest.py
+
+      - name: Save digest artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-digest-${{ github.run_number }}
+          path: daily-digests/*.md
+          retention-days: 90
