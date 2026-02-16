@@ -1,0 +1,2 @@
+# OpenAI-Frontier
+Daily Digest
