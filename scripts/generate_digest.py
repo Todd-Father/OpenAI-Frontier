@@ -130,7 +130,10 @@ def analyze_and_rank_stories(articles):
         score = 0
 
         # Combine title, description, and content for analysis
-        full_text = f"{article.get('title', '')} {article.get('description', '')} {article.get('content', '')}".lower()
+        title = article.get('title') or ''
+        description = article.get('description') or ''
+        content = article.get('content') or ''
+        full_text = f"{title} {description} {content}".lower()
 
         # Check for "OpenAI Frontier" mention (high priority)
         if 'openai frontier' in full_text:
@@ -158,7 +161,7 @@ def analyze_and_rank_stories(articles):
                 pass
 
         # Check content length
-        if len(article.get('content', '')) > 500:
+        if len(content) > 500:
             score += 3
 
         # Check for important keywords
@@ -229,10 +232,10 @@ def generate_digest_markdown(stories, date):
 """
 
     for i, story in enumerate(stories, 1):
-        title = story.get('title', 'No title')
-        source = story.get('source', 'Unknown')
-        url = story.get('url', '#')
-        description = story.get('description', 'No description available')
+        title = story.get('title') or 'No title'
+        source = story.get('source') or 'Unknown'
+        url = story.get('url') or '#'
+        description = story.get('description') or 'No description available'
 
         # Generate "Why You Should Care" and "What This Means"
         why_care, what_means = _generate_insights(story)
@@ -273,9 +276,9 @@ def _generate_insights(story):
 
     Uses heuristics based on content to provide context.
     """
-    title = story.get('title', '').lower()
-    description = story.get('description', '').lower()
-    content = story.get('content', '').lower()
+    title = (story.get('title') or '').lower()
+    description = (story.get('description') or '').lower()
+    content = (story.get('content') or '').lower()
     full_text = f"{title} {description} {content}"
 
     # Why You Should Care
