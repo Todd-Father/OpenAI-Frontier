@@ -353,6 +353,36 @@ You should now see exactly these 4 secrets listed:
 - Pull latest code from the repository
 - Or manually add the line to the workflow file and commit
 
+### Issue 6: GitHub Actions Workflow Fails After Making Repository Private
+
+**Status:** Repository was changed from public to private on February 16, 2026
+
+**Potential Causes:**
+
+1. **GitHub Actions may be disabled for private repos by default**
+   - Go to: [github.com/Todd-Father/OpenAI-Frontier/settings/actions](https://github.com/Todd-Father/OpenAI-Frontier/settings/actions)
+   - Verify: "Allow all actions and reusable workflows" is selected
+   - If disabled, enable it
+
+2. **Free tier limits for private repos:**
+   - GitHub Free tier includes 2,000 minutes/month for private repos
+   - Current usage: ~5 minutes/day × 22 days = ~110 minutes/month
+   - Well within limits, so this shouldn't be an issue
+
+3. **Permissions issues:**
+   - GitHub Actions needs "Read and write permissions"
+   - Go to: [github.com/Todd-Father/OpenAI-Frontier/settings/actions](https://github.com/Todd-Father/OpenAI-Frontier/settings/actions)
+   - Scroll to "Workflow permissions"
+   - Ensure "Read and write permissions" is selected
+
+**If workflow fails tomorrow (February 17, 2026):**
+1. Check the error message in workflow logs
+2. Verify GitHub Actions is enabled for the private repo
+3. Check workflow permissions settings
+4. The repository was working when public, so privacy change is likely culprit
+
+**Note:** Private repositories on GitHub Free tier DO support GitHub Actions with generous limits, so this should continue working without issues.
+
 ---
 
 ## Part 6: Verify Automated Schedule
