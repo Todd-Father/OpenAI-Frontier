@@ -2,10 +2,10 @@ name: Daily OpenAI Frontier Digest
 
 on:
   schedule:
-    # Runs at 7:00 AM EST (12:00 UTC) Monday-Friday
+    # Runs at 6:00 AM EST (11:00 UTC) Monday-Friday
     # Note: Adjust for daylight saving time if needed
-    # EST (winter): 7am EST = 12pm UTC
-    # EDT (summer): 7am EDT = 11am UTC
+    # EST (winter): 6am EST = 11am UTC
+    # EDT (summer): 6am EDT = 10am UTC
     - cron: '0 12 * * 1-5'
 
   workflow_dispatch:  # Allow manual trigger for testing
