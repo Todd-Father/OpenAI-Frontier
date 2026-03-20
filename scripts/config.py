@@ -9,16 +9,16 @@ RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
 if not RECIPIENT_EMAIL:
     raise ValueError("RECIPIENT_EMAIL environment variable not set")
 SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'digest@openai-frontier.com')
-SENDER_NAME = 'OpenAI Frontier Digest'
+SENDER_NAME = 'Event Driven Architecture Digest'
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
 # Search configuration
 SEARCH_QUERIES = [
-    'OpenAI Frontier news',
-    'OpenAI Frontier enterprise',
-    'OpenAI Frontier security',
-    'OpenAI Frontier updates',
-    'OpenAI Frontier partnership'
+    'event driven architecture news',
+    'event driven architecture enterprise',
+    'event driven architecture security',
+    'event driven architecture updates',
+    'event driven architecture patterns'
 ]
 
 # Authoritative sources (higher priority)
@@ -46,4 +46,4 @@ MAX_STORIES = 7
 DIGEST_FOLDER = 'daily-digests'
 
 # Email template configuration
-EMAIL_SUBJECT_TEMPLATE = "OpenAI Frontier Daily Digest - {date}"
+EMAIL_SUBJECT_TEMPLATE = "Event Driven Architecture Daily Digest - {date}"
