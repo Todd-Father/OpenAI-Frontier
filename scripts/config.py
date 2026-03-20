@@ -17,13 +17,32 @@ SEARCH_QUERIES = [
     'event driven architecture news',
     'event driven architecture enterprise',
     'event driven architecture security',
-    'event driven architecture updates',
-    'event driven architecture patterns'
+    'Kafka security news',
+    'Confluent Cloud updates',
+    'AWS EventBridge news',
+    'Microsoft Entra ID updates',
+    'Zero Trust Architecture news',
+    'Flink security updates',
+    'Kong API gateway news'
 ]
 
 # Authoritative sources (higher priority)
 AUTHORITATIVE_SOURCES = [
-    'openai.com',
+    # EDA-specific sources
+    'confluent.io',
+    'kafka.apache.org',
+    'aws.amazon.com',
+    'aws-blog',
+    'konghq.com',
+    'flink.apache.org',
+    # Microsoft/Identity sources
+    'microsoft.com',
+    'learn.microsoft.com',
+    'techcommunity.microsoft.com',
+    # Security/ZTA sources
+    'nist.gov',
+    'csrc.nist.gov',
+    # General tech news
     'techcrunch.com',
     'theverge.com',
     'arstechnica.com',
@@ -33,14 +52,14 @@ AUTHORITATIVE_SOURCES = [
     'bloomberg.com',
     'venturebeat.com',
     'zdnet.com',
-    'microsoft.com',
     'cnbc.com',
-    'fortune.com'
+    'infoq.com',
+    'thenewstack.io'
 ]
 
 # Story limits
-MIN_STORIES = 3
-MAX_STORIES = 7
+MIN_STORIES = 5
+MAX_STORIES = 10
 
 # Local storage
 DIGEST_FOLDER = 'daily-digests'
