@@ -5,7 +5,9 @@ import os
 from datetime import datetime
 
 # Email configuration
-RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL', 'tbeavers12@gmail.com')
+RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
+if not RECIPIENT_EMAIL:
+    raise ValueError("RECIPIENT_EMAIL environment variable not set")
 SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'digest@openai-frontier.com')
 SENDER_NAME = 'OpenAI Frontier Digest'
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
