@@ -2,7 +2,7 @@
 """
 OpenAI Frontier Daily Digest Generator
 
-This script searches for OpenAI Frontier news, analyzes and ranks stories,
+This script searches for event driven architecture news, analyzes and ranks stories,
 generates a digest, saves it locally, and emails it via SendGrid.
 """
 
@@ -27,12 +27,12 @@ import config
 
 def search_openai_frontier_news():
     """
-    Search for recent OpenAI Frontier news articles.
+    Search for recent event driven architecture news articles specifcally around security related to confluent cloud, kafka api, flink and kong.
 
     Uses web search to find articles from the past 24-48 hours.
     Returns list of articles with title, URL, source, date, and snippet.
     """
-    print("Searching for OpenAI Frontier news...")
+    print("Searching for event driven architecture news...")
 
     articles = []
 
@@ -104,7 +104,7 @@ def _get_fallback_articles():
         'url': 'https://newsapi.org',
         'source': 'System',
         'published_at': datetime.now().isoformat(),
-        'description': 'To receive real-time OpenAI Frontier news, please configure NewsAPI. See SETUP.md for instructions.',
+        'description': 'To receive real-time Event Driven Architecture news, please configure NewsAPI. See SETUP.md for instructions.',
         'content': 'Get your free API key at https://newsapi.org and add it to your GitHub Secrets as NEWSAPI_KEY.'
     }]
 
@@ -114,11 +114,11 @@ def analyze_and_rank_stories(articles):
     Analyze and rank articles by relevance.
 
     Scoring criteria:
-    - Mentions "OpenAI Frontier" explicitly (+10)
+    - Mentions "Event Driven Architecture Security" explicitly (+10)
     - From authoritative source (+5)
     - Recent (past 24h: +5, past 48h: +3)
     - Long content (+3)
-    - Contains keywords: enterprise, security, partnership (+2 each)
+    - Contains keywords: enterprise, EDA, security, Confluent Cloud, Kafka  (+2 each)
 
     Returns top MIN_STORIES to MAX_STORIES ranked articles.
     """
@@ -135,7 +135,7 @@ def analyze_and_rank_stories(articles):
         content = article.get('content') or ''
         full_text = f"{title} {description} {content}".lower()
 
-        # Check for "OpenAI Frontier" mention (high priority)
+        # Check for "Event Driven Architecture" mention (high priority)
         if 'openai frontier' in full_text:
             score += 10
         elif 'frontier' in full_text and 'openai' in full_text:
@@ -165,7 +165,7 @@ def analyze_and_rank_stories(articles):
             score += 3
 
         # Check for important keywords
-        keywords = ['enterprise', 'security', 'partnership', 'customer', 'integration']
+        keywords = ['enterprise', 'EDA', 'security', 'Confluent Cloud', 'Kafka']
         for keyword in keywords:
             if keyword in full_text:
                 score += 2
@@ -224,7 +224,7 @@ def generate_digest_markdown(stories, date):
 
     date_str = date.strftime('%B %d, %Y')
 
-    digest = f"""# OpenAI Frontier Daily Digest
+    digest = f"""# Event Driven Architecture Daily Digest
 **{date_str}**
 
 ---
@@ -260,8 +260,8 @@ def generate_digest_markdown(stories, date):
 
 *Generated on {datetime.now().strftime('%Y-%m-%d at %H:%M UTC')}*
 
-**About This Digest:** This automated digest tracks news and developments related to OpenAI Frontier,
-the enterprise AI agent platform launched in February 2026. Stories are selected based on relevance,
+**About This Digest:** This automated digest tracks news and developments related to Event Driven Architecture,
+especially related to Confluent Cloud. Stories are selected based on relevance,
 source authority, and recency.
 
 **Feedback or Questions?** Reply to this email.
@@ -284,15 +284,15 @@ def _generate_insights(story):
     # Why You Should Care
     why_care = ""
     if any(word in full_text for word in ['security', 'breach', 'vulnerability', 'risk']):
-        why_care = "Security implications for enterprise AI deployments may affect your OpenAI Frontier implementation strategy."
+        why_care = "Security implications for enterprise EDA may affect your EDA implementation strategy."
     elif any(word in full_text for word in ['partnership', 'integration', 'customer']):
-        why_care = "New partnerships and integrations could expand Frontier's capabilities and ecosystem."
+        why_care = "New partnerships and integrations could expand EDA's capabilities and ecosystem."
     elif any(word in full_text for word in ['feature', 'update', 'release', 'launch']):
         why_care = "New features or updates may enhance your organization's AI agent capabilities."
     elif any(word in full_text for word in ['compliance', 'regulation', 'gdpr', 'privacy']):
-        why_care = "Regulatory developments may impact how you deploy and govern AI agents."
+        why_care = "Regulatory developments may impact how you deploy and govern."
     else:
-        why_care = "This development may influence enterprise AI strategy and OpenAI Frontier adoption."
+        why_care = "This development may influence enterprise AI strategy and EDA."
 
     # What This Means
     what_means = ""
@@ -303,7 +303,7 @@ def _generate_insights(story):
     elif any(word in full_text for word in ['technical', 'capability', 'performance']):
         what_means = "Technical capabilities are advancing, potentially enabling new use cases for your organization."
     else:
-        what_means = "Monitor how this development aligns with your organization's OpenAI Frontier roadmap."
+        what_means = "Monitor how this development aligns with your organization's EDA roadmap."
 
     return why_care, what_means
 
