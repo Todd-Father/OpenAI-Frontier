@@ -11,8 +11,8 @@ import sys
 import html
 from datetime import datetime, timedelta
 from pathlib import Path
-import json
-import hashlib
+# import json
+# import hashlib
 import requests
 from dotenv import load_dotenv
 from sendgrid import SendGridAPIClient
@@ -32,15 +32,24 @@ def search_EDA_news():
     Uses web search to find articles from the past 24-48 hours.
     Returns list of articles with title, URL, source, date, and snippet.
     """
-    print("Searching for event driven architecture news...")
+    import logging
+logger = logging.getLogger(__name__)
 
+logger.info("Searching for event driven architecture news...")
+logger.warning("No news API configured. Using fallback method...")
+logger.error("Error sending email: {e}", exc_info=True)
     articles = []
 
     # Method 1: Use NewsAPI (requires API key)
     newsapi_key = os.getenv('NEWSAPI_KEY')
     if newsapi_key:
         articles.extend(_search_newsapi(newsapi_key))
+import logging
+logger = logging.getLogger(__name__)
 
+logger.info("Searching for event driven architecture news...")
+logger.warning("No news API configured. Using fallback method...")
+logger.error("Error sending email: {e}", exc_info=True)
     # Method 2: Manual RSS/scraping fallback (add your preferred sources)
     # This is a fallback if NewsAPI is not configured
     if not articles:
@@ -86,8 +95,8 @@ def _search_newsapi(api_key):
                         'description': article.get('description', ''),
                         'content': article.get('content', '')
                     })
-        except Exception as e:
-            print(f"Error searching NewsAPI for '{query}': {e}")
+        except (requests.exceptions.RequestException, ValueError) as e:
+    print(f"Error searching NewsAPI for '{query}': {e}")
             continue
 
     return articles
@@ -155,8 +164,8 @@ def analyze_and_rank_stories(articles):
                     score += 5
                 elif hours_old <= 48:
                     score += 3
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+    print(f"Warning: Could not parse date '{published_at}': {e}")
 
         # Check content length
         if len(content) > 500:
@@ -185,8 +194,8 @@ def _extract_domain(url):
         from urllib.parse import urlparse
         parsed = urlparse(url)
         return parsed.netloc.lower()
-    except Exception:
-        return ''
+    except (requests.exceptions.RequestException, ValueError) as e:
+    print(f"Error searching NewsAPI for '{query}': {e}")
 
 def generate_digest_html(articles):
     """
@@ -228,21 +237,33 @@ def send_digest_email(digest_html, recipient_email):
         response = sg.send(message)
         print(f"Email sent successfully. Status code: {response.status_code}")
         return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
+    except (requests.exceptions.RequestException, ValueError) as e:
+    print(f"Error searching NewsAPI for '{query}': {e}")
         return False
 
 if __name__ == '__main__':
-    articles = search_EDA_news()
-    ranked_articles = analyze_and_rank_stories(articles)
-    digest_html = generate_digest_html(ranked_articles)
-    
-    # Save locally
-    with open('digest.html', 'w') as f:
-        f.write(digest_html)
-    print("Digest saved to digest.html")
-    
-    # Send email if configured
-    recipient = os.getenv('DIGEST_RECIPIENT_EMAIL')
-    if recipient:
-        send_digest_email(digest_html, recipient)
+    try:
+        articles = search_EDA_news()
+        if not articles:
+            print("Warning: No articles found")
+        
+        ranked_articles = analyze_and_rank_stories(articles)
+        digest_html = generate_digest_html(ranked_articles)
+        
+        try:
+            with open('digest.html', 'w') as f:
+                f.write(digest_html)
+            print("Digest saved successfully to digest.html")
+        except IOError as e:
+            print(f"Error writing digest file: {e}")
+            sys.exit(1)
+            
+        recipient = os.getenv('DIGEST_RECIPIENT_EMAIL')
+        if recipient:
+            send_digest_email(digest_html, recipient)
+        else:
+            print("Note: DIGEST_RECIPIENT_EMAIL not configured, skipping email send")
+            
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        sys.exit(1)
