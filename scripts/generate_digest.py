@@ -271,7 +271,7 @@ def send_digest_email(digest_html, recipient_email):
     """
     # Validate environment variables
     api_key = os.getenv('SENDGRID_API_KEY')
-    from_email = os.getenv('FROM_EMAIL')
+    from_email = os.getenv('SENDER_EMAIL')
 
     if not api_key:
         logger.error("SENDGRID_API_KEY not configured in environment variables")
@@ -318,23 +318,33 @@ if __name__ == '__main__':
         # Generate digest HTML
         digest_html = generate_digest_html(ranked_articles)
         
-        # Save locally
+        # Save locally as markdown
         try:
-            digest_path = os.path.join(os.getcwd(), 'digest.html')
+            # Create daily-digests directory if it doesn't exist
+            digest_folder = Path('daily-digests')
+            digest_folder.mkdir(exist_ok=True)
+
+            # Save as markdown with date in filename
+            date_str = datetime.now().strftime('%Y-%m-%d')
+            digest_path = digest_folder / f"{date_str}.md"
+
+            # Convert HTML to markdown for storage
+            digest_md = f"# Event Driven Architecture Daily Digest\n\n{digest_html}\n"
+
             with open(digest_path, 'w', encoding='utf-8') as f:
-                f.write(digest_html)
+                f.write(digest_md)
             logger.info(f"Digest saved successfully to {digest_path}")
         except IOError as e:
             logger.error(f"Error writing digest file: {e}")
             sys.exit(1)
             
         # Send email if configured
-        recipient = os.getenv('DIGEST_RECIPIENT_EMAIL')
+        recipient = os.getenv('RECIPIENT_EMAIL')
         if recipient:
             logger.info(f"Sending digest to {recipient}")
             send_digest_email(digest_html, recipient)
         else:
-            logger.info("DIGEST_RECIPIENT_EMAIL not configured, skipping email send")
+            logger.info("RECIPIENT_EMAIL not configured, skipping email send")
             
     except Exception as e:
         logger.critical(f"Fatal error: {e}", exc_info=True)
