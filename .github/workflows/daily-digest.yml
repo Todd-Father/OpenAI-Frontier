@@ -13,6 +13,9 @@ on:
 jobs:
   generate-digest:
     runs-on: ubuntu-latest
+    env:
+      # Future-proof for Node.js 24 migration (June 2026)
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -33,7 +36,7 @@ jobs:
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
-          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
         run: |
           cd scripts
@@ -44,5 +47,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: training-digest-${{ github.run_number }}
-          path: training-digests/*.md
+          path: scripts/training-digests/*.md
           retention-days: 90
