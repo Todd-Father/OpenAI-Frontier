@@ -1,6 +1,6 @@
-# Setup Guide: OpenAI Frontier Daily Digest
+# Setup Guide: Security Skills Training Digest
 
-This guide will walk you through setting up the automated daily digest system that runs every weekday at 7am and emails you the top OpenAI Frontier news stories.
+This guide will walk you through setting up the automated security training video digest system that runs every Friday, Saturday, and Sunday at 7am EST and emails you curated short training videos.
 
 **Estimated Setup Time:** 20-30 minutes
 
@@ -12,7 +12,7 @@ Before you begin, make sure you have:
 
 - ✅ A GitHub account (free tier is fine)
 - ✅ A SendGrid account (free tier: 100 emails/day)
-- ✅ A NewsAPI account (free tier: 100 requests/day) - *optional but recommended*
+- ✅ A YouTube Data API key (free tier: 10,000 requests/day) - *optional but recommended*
 - ✅ Git installed on your computer
 - ✅ Python 3.11+ installed (for local testing only)
 
@@ -67,29 +67,48 @@ SendGrid requires sender verification on the free tier:
 
 ---
 
-## Step 2: NewsAPI Setup (News Gathering)
+## Step 2: YouTube Data API Setup (Video Search)
 
-NewsAPI provides access to news articles from thousands of sources.
+The YouTube Data API allows us to search for and retrieve metadata about training videos.
 
-### 2.1 Create NewsAPI Account
+### 2.1 Create Google Cloud Project
 
-1. Go to [https://newsapi.org/register](https://newsapi.org/register)
-2. Sign up for a free account
-3. Verify your email address
+1. Go to [https://console.cloud.google.com](https://console.cloud.google.com)
+2. Sign in with your Google account
+3. Click **Select a project** (top menu bar) → **New Project**
+4. Project name: `Security Training Digest` (or any name)
+5. Click **Create**
+6. Wait for project creation (takes 10-30 seconds)
 
-### 2.2 Get API Key
+### 2.2 Enable YouTube Data API v3
 
-1. Log in to NewsAPI dashboard
-2. Your API key is displayed on the main dashboard page
-3. Copy it - it will look like: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
-4. Save it temporarily (you'll add it to GitHub Secrets in Step 4)
+1. In the Google Cloud Console, ensure your new project is selected
+2. Navigate to **APIs & Services** > **Library** (left sidebar)
+3. Search for: `YouTube Data API v3`
+4. Click on **YouTube Data API v3**
+5. Click the **Enable** button
+6. Wait for activation (takes a few seconds)
+
+### 2.3 Create API Key
+
+1. Navigate to **APIs & Services** > **Credentials** (left sidebar)
+2. Click **+ CREATE CREDENTIALS** button (top)
+3. Select **API key** from the dropdown
+4. Your API key is generated and displayed
+5. Copy it - it will look like: `AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
+6. Click **Restrict Key** (recommended for security)
+7. Under **API restrictions**, select **Restrict key**
+8. Check **YouTube Data API v3** from the list
+9. Click **Save**
+10. Save your API key temporarily (you'll add it to GitHub Secrets in Step 4)
 
 **Free Tier Limits:**
-- 100 requests per day
-- News from past 30 days
-- Perfect for our daily digest use case
+- 10,000 quota units per day
+- Each search = ~100 units
+- Enough for ~100 searches/day
+- Perfect for 3x per week digest
 
-**Note:** If you skip NewsAPI setup, the digest will include a placeholder message. You can configure it later.
+**Note:** If you skip YouTube API setup, the digest will include a fallback message with setup instructions. You can configure it later.
 
 ---
 
@@ -162,20 +181,30 @@ GitHub Secrets store sensitive information (API keys) securely.
    - **Secret:** `tbeavers12@gmail.com` (or your preferred email)
 3. Click **Add secret**
 
-### 4.4 Add NEWSAPI_KEY Secret
+### 4.4 Add YOUTUBE_API_KEY Secret
 
 1. Click **New repository secret** button again
 2. Fill in:
-   - **Name:** `NEWSAPI_KEY` (must be exactly this)
-   - **Secret:** Paste your NewsAPI key (from Step 2.2)
+   - **Name:** `YOUTUBE_API_KEY` (must be exactly this)
+   - **Secret:** Paste your YouTube Data API key (from Step 2.3)
 3. Click **Add secret**
+
+### 4.5 Add SENDER_EMAIL Secret (Optional)
+
+1. Click **New repository secret** button again
+2. Fill in:
+   - **Name:** `SENDER_EMAIL` (must be exactly this)
+   - **Secret:** Email address for the "From" field (e.g., `security-training@skills.com`)
+3. Click **Add secret**
+4. **Note:** This is optional - defaults to 'security-training@skills.com' if not set
 
 **Important:** Secret names are case-sensitive and must match exactly!
 
-**Final Check:** You should now have 3 secrets:
+**Final Check:** You should now have 3-4 secrets:
 - ✅ SENDGRID_API_KEY
 - ✅ RECIPIENT_EMAIL
-- ✅ NEWSAPI_KEY
+- ✅ YOUTUBE_API_KEY
+- ✅ SENDER_EMAIL (optional)
 
 ---
 
@@ -194,7 +223,7 @@ GitHub Actions may be disabled by default in private repositories.
 ### 5.2 Verify Workflow File
 
 1. Click **Actions** tab
-2. You should see "Daily OpenAI Frontier Digest" in the left sidebar
+2. You should see "Security Skills Training Digest" in the left sidebar
 3. If you see it, you're all set!
 
 ---
@@ -206,7 +235,7 @@ Before waiting for the scheduled 7am run, let's test it manually.
 ### 6.1 Trigger Manual Run
 
 1. Go to **Actions** tab in your repository
-2. Click **Daily OpenAI Frontier Digest** in the left sidebar
+2. Click **Security Skills Training Digest** in the left sidebar
 3. Click the **Run workflow** dropdown button (right side)
 4. Click the green **Run workflow** button
 5. Wait 30-60 seconds, then refresh the page
@@ -226,38 +255,40 @@ Before waiting for the scheduled 7am run, let's test it manually.
 ### 6.3 Check Your Email
 
 1. Check `tbeavers12@gmail.com` (or your configured email)
-2. You should receive an email titled: **"OpenAI Frontier Daily Digest - [Today's Date]"**
+2. You should receive an email titled: **"🎓 Security Skills Training - [Day, Date]"**
 3. Verify the email looks good:
-   - 3-7 news stories
-   - Each story has: title, source, link, summary, why you should care, what it means
+   - 2-4 training videos
+   - Each video has: title, channel, duration badge, YouTube link, overview, learning relevance
+   - Progressive learning tips section
+   - Weekly focus roadmap
    - Proper formatting
 
-### 6.4 Check Local Digest Archive
+### 6.4 Check Digest Archive Artifacts
 
 1. Go to the **Actions** tab > your workflow run
 2. Scroll down to **Artifacts** section
-3. You'll see **daily-digest-XXX** - this is your saved digest
+3. You'll see **training-digest-XXX** - this is your saved digest
 4. Download it to view the markdown file
 
-**Note:** The `daily-digests/` folder is gitignored and only exists locally or as GitHub Actions artifacts.
+**Note:** The `training-digests/` folder is gitignored and only exists locally or as GitHub Actions artifacts.
 
 ---
 
 ## Step 7: Verify Scheduled Runs
 
-The digest is scheduled to run automatically every weekday at 7am EST.
+The digest is scheduled to run automatically every **Friday, Saturday, and Sunday** at 7am EST.
 
 ### 7.1 Understanding the Schedule
 
 The workflow uses this cron schedule:
 ```yaml
-cron: '0 12 * * 1-5'
+cron: '0 12 * * 0,5,6'
 ```
 
 This means:
 - **`0 12`** = 12:00 UTC
 - **`* *`** = Every day of month, every month
-- **`1-5`** = Monday through Friday
+- **`0,5,6`** = Sunday (0), Friday (5), Saturday (6)
 
 **Timezone Conversion:**
 - **Winter (EST):** 12:00 UTC = 7:00 AM EST ✅
@@ -268,11 +299,11 @@ This means:
 If you want the digest to arrive at 7am year-round:
 
 **Option A: Update cron manually twice a year**
-- In March (when DST starts): Change to `'0 11 * * 1-5'` for 7am EDT
-- In November (when DST ends): Change to `'0 12 * * 1-5'` for 7am EST
+- In March (when DST starts): Change to `'0 11 * * 0,5,6'` for 7am EDT
+- In November (when DST ends): Change to `'0 12 * * 0,5,6'` for 7am EST
 
 **Option B: Accept 8am during summer**
-- Keep `'0 12 * * 1-5'` and receive at 7am EST / 8am EDT
+- Keep `'0 12 * * 0,5,6'` and receive at 7am EST / 8am EDT
 
 To change the schedule:
 1. Edit `.github/workflows/daily-digest.yml`
@@ -283,7 +314,7 @@ To change the schedule:
 
 Check that automated runs are working:
 
-1. Wait until after 7am EST on a weekday
+1. Wait until after 7am EST on Friday, Saturday, or Sunday
 2. Go to **Actions** tab
 3. You should see a new automatic run
 4. Verify email was received
@@ -315,7 +346,8 @@ Edit `.env` and add your API keys:
 ```
 SENDGRID_API_KEY=SG.your_sendgrid_key_here
 RECIPIENT_EMAIL=tbeavers12@gmail.com
-NEWSAPI_KEY=your_newsapi_key_here
+YOUTUBE_API_KEY=AIzaSy_your_youtube_key_here
+SENDER_EMAIL=security-training@skills.com
 ```
 
 **Important:** This file is gitignored and will never be committed.
@@ -329,11 +361,11 @@ python generate_digest.py
 
 You should see:
 - Progress messages
-- Stories found and selected
+- Videos found and selected
 - Digest saved confirmation
 - Email sent confirmation
 
-Check your email and the `daily-digests/` folder.
+Check your email and the `training-digests/` folder.
 
 ---
 
@@ -359,19 +391,20 @@ Check your email and the `daily-digests/` folder.
 3. Expand steps to see error messages
 
 **Common Issues:**
-- ❌ Secrets not set → Verify all 3 secrets exist (Step 4)
-- ❌ Secret names wrong → Must be exact: `SENDGRID_API_KEY`, `RECIPIENT_EMAIL`, `NEWSAPI_KEY`
+- ❌ Secrets not set → Verify all secrets exist (Step 4)
+- ❌ Secret names wrong → Must be exact: `SENDGRID_API_KEY`, `RECIPIENT_EMAIL`, `YOUTUBE_API_KEY`
 - ❌ Python errors → Check the logs for specific error messages
 
-### No News Stories Found
+### No Videos Found
 
 **Possible Causes:**
-- NewsAPI key not configured → Check GitHub Secret `NEWSAPI_KEY`
-- No recent OpenAI Frontier news → Normal on some days
-- API rate limit reached → Free tier = 100 requests/day
+- YouTube API key not configured → Check GitHub Secret `YOUTUBE_API_KEY`
+- API not enabled in Google Cloud → Verify YouTube Data API v3 is enabled
+- API key restrictions too strict → Check API key settings in Google Cloud Console
+- API rate limit reached → Free tier = 10,000 quota units/day
 
 **Fallback:**
-If no news is found, the digest will include a configuration message.
+If YouTube API is not configured, the digest will include a configuration message with setup instructions.
 
 ### Wrong Timezone
 
@@ -391,16 +424,16 @@ Edit `.github/workflows/daily-digest.yml`:
 
 ```yaml
 schedule:
-  - cron: '0 13 * * 1-5'  # 8am EST instead of 7am
+  - cron: '0 13 * * 0,5,6'  # 8am EST instead of 7am
 ```
 
-### Change Number of Stories
+### Change Number of Videos
 
 Edit `scripts/config.py`:
 
 ```python
-MIN_STORIES = 5  # Minimum stories (was 3)
-MAX_STORIES = 10  # Maximum stories (was 7)
+MIN_VIDEOS = 3  # Minimum videos (was 2)
+MAX_VIDEOS = 5  # Maximum videos (was 4)
 ```
 
 ### Add More Search Queries
@@ -409,12 +442,12 @@ Edit `scripts/config.py`:
 
 ```python
 SEARCH_QUERIES = [
-    'OpenAI Frontier news',
-    'OpenAI Frontier enterprise',
-    'OpenAI Frontier security',
-    'OpenAI Frontier updates',
-    'OpenAI Frontier partnership',
-    'OpenAI Frontier AI agents',  # Add your own
+    'OIDC tutorial video',
+    'OAuth 2.0 explained video',
+    'Microsoft Entra ID tutorial',
+    'AWS IAM best practices video',
+    'Zero Trust security explained',  # Add your own
+    'SAML authentication tutorial',
 ]
 ```
 
@@ -429,17 +462,18 @@ Edit `scripts/generate_digest.py`, specifically the `generate_digest_markdown()`
 ### Weekly Check
 
 Once a week, verify:
-- ✅ Emails are arriving daily (Mon-Fri)
-- ✅ Stories are relevant
+- ✅ Emails are arriving on weekends (Fri/Sat/Sun)
+- ✅ Videos are relevant and educational
+- ✅ Duration mix is appropriate (mostly 5-15 min)
 - ✅ No GitHub Actions failures
 
 ### Monthly Tasks
 
 Once a month:
-- 📊 Review digest quality
-- 🔍 Check if search queries need updating
+- 📊 Review digest quality and learning progression
+- 🔍 Check if search queries need updating based on learning goals
 - 🔐 Rotate SendGrid API key (security best practice)
-- 📈 Review NewsAPI usage in dashboard
+- 📈 Review YouTube API quota usage in Google Cloud Console
 
 ### If You Need to Pause
 
@@ -447,7 +481,7 @@ To temporarily disable the digest:
 
 **Option 1: Disable workflow**
 1. Go to **Actions** tab
-2. Click **Daily OpenAI Frontier Digest**
+2. Click **Security Skills Training Digest**
 3. Click the **•••** menu (top right)
 4. Click **Disable workflow**
 
@@ -456,7 +490,7 @@ Edit `.github/workflows/daily-digest.yml` and comment out the cron line:
 
 ```yaml
 schedule:
-  # - cron: '0 12 * * 1-5'  # Temporarily disabled
+  # - cron: '0 12 * * 0,5,6'  # Temporarily disabled
 ```
 
 ---
@@ -484,7 +518,8 @@ schedule:
 ### Resources
 
 - **SendGrid Docs:** [https://docs.sendgrid.com](https://docs.sendgrid.com)
-- **NewsAPI Docs:** [https://newsapi.org/docs](https://newsapi.org/docs)
+- **YouTube Data API Docs:** [https://developers.google.com/youtube/v3](https://developers.google.com/youtube/v3)
+- **Google Cloud Console:** [https://console.cloud.google.com](https://console.cloud.google.com)
 - **GitHub Actions Docs:** [https://docs.github.com/en/actions](https://docs.github.com/en/actions)
 - **Cron Schedule Help:** [https://crontab.guru](https://crontab.guru)
 
@@ -497,20 +532,19 @@ A: Yes! Modify `scripts/config.py` to add multiple recipients:
 RECIPIENT_EMAIL = 'email1@example.com,email2@example.com'
 ```
 
-**Q: Can I run this more than once per day?**
-A: Yes! Add another cron schedule in `.github/workflows/daily-digest.yml`:
+**Q: Can I change the days it runs?**
+A: Yes! Edit `.github/workflows/daily-digest.yml` and modify the cron schedule. For example, to run only on Saturdays:
 
 ```yaml
 schedule:
-  - cron: '0 12 * * 1-5'  # 7am EST
-  - cron: '0 20 * * 1-5'  # 3pm EST
+  - cron: '0 12 * * 6'  # Saturday only at 7am EST
 ```
 
 **Q: How much does this cost?**
-A: $0! Both SendGrid and NewsAPI have generous free tiers that cover this use case.
+A: $0! Both SendGrid and YouTube Data API have generous free tiers that cover this use case.
 
-**Q: What if OpenAI Frontier changes its name or URL?**
-A: Update the search queries in `scripts/config.py` to include the new terms.
+**Q: Can I focus on different security topics?**
+A: Yes! Update the search queries in `scripts/config.py` to match your learning goals. Focus on specific technologies, frameworks, or security domains.
 
 ---
 
@@ -520,12 +554,12 @@ Before considering setup complete, verify:
 
 - ✅ GitHub repository created and code pushed
 - ✅ SendGrid account created and sender verified
-- ✅ NewsAPI account created (optional)
-- ✅ All 3 GitHub Secrets configured
+- ✅ YouTube Data API enabled and key created (optional)
+- ✅ All 3-4 GitHub Secrets configured
 - ✅ Manual workflow test successful
 - ✅ Email received successfully
-- ✅ Email content looks good
-- ✅ Scheduled run verified (after first 7am run)
+- ✅ Email contains 2-4 training videos with proper formatting
+- ✅ Scheduled run verified (after first weekend run)
 
 ---
 
@@ -533,12 +567,14 @@ Before considering setup complete, verify:
 
 Now that setup is complete:
 
-1. **Wait for first scheduled run** (next weekday at 7am)
-2. **Review the digest quality** and adjust search queries if needed
-3. **Star this repository** for easy access
-4. **Fill out** the security questionnaires in the other markdown files
+1. **Wait for first scheduled run** (next Friday, Saturday, or Sunday at 7am)
+2. **Watch the videos** and take notes on key concepts
+3. **Review the digest quality** and adjust search queries if needed
+4. **Track your learning progress** - save completed digests to review your journey
+5. **Star this repository** for easy access
+6. **Fill out** the security questionnaires in the other markdown files
 
-Enjoy your automated daily digest!
+Enjoy your automated security skills training!
 
 ---
 
