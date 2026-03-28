@@ -123,6 +123,18 @@ def _get_video_details(api_key, video_ids):
             duration_seconds = int(isodate.parse_duration(duration_iso).total_seconds())
             duration_minutes = duration_seconds // 60
 
+            # Filter out very short videos (less than 5 minutes)
+            # These are usually not substantial tutorials
+            if duration_minutes < 5:
+                logger.debug(f"Skipping short video ({duration_minutes}m): {item['snippet']['title'][:50]}")
+                continue
+
+            # Filter out very long videos (over 45 minutes)
+            # These are usually full courses, not focused tutorials
+            if duration_minutes > 45:
+                logger.debug(f"Skipping long video ({duration_minutes}m): {item['snippet']['title'][:50]}")
+                continue
+
             video = {
                 'title': item['snippet']['title'],
                 'url': f"https://www.youtube.com/watch?v={item['id']}",
@@ -167,15 +179,49 @@ def analyze_and_rank_videos(videos):
     - View count: High views (+5)
     - Like ratio: Good engagement (+5)
     - Recency: Recent videos (+3)
-    - Channel authority: Known training channels (+5)
+    - Channel authority: Priority channels (+8)
+    - Content filtering: Exclude irrelevant keywords
 
     Returns 2-4 videos, with max ONE video over 20 minutes.
     """
     logger.info(f"Analyzing and ranking {len(videos)} videos...")
 
+    # Step 1: Remove duplicates by video URL/ID
+    seen_urls = set()
+    unique_videos = []
+    for video in videos:
+        url = video.get('url', '')
+        if url not in seen_urls:
+            seen_urls.add(url)
+            unique_videos.append(video)
+        else:
+            logger.info(f"Removed duplicate: {video.get('title', 'Unknown')[:50]}")
+
+    logger.info(f"After deduplication: {len(unique_videos)} unique videos")
+
+    # Step 2: Filter out irrelevant content by excluded keywords
+    filtered_videos = []
+    for video in unique_videos:
+        title = video.get('title', '').lower()
+        description = video.get('description', '').lower()
+
+        # Check if video contains excluded keywords
+        has_excluded = False
+        for keyword in config.EXCLUDED_KEYWORDS:
+            if keyword.lower() in title or keyword.lower() in description:
+                logger.info(f"Filtered out (excluded keyword '{keyword}'): {video.get('title', 'Unknown')[:50]}")
+                has_excluded = True
+                break
+
+        if not has_excluded:
+            filtered_videos.append(video)
+
+    logger.info(f"After filtering: {len(filtered_videos)} relevant videos")
+
+    # Step 3: Score and rank videos
     scored_videos = []
 
-    for video in videos:
+    for video in filtered_videos:
         score = 0
         duration = video['duration_minutes']
 
@@ -218,11 +264,13 @@ def analyze_and_rank_videos(videos):
         except:
             pass
 
-        # Known training channels
+        # Priority channel scoring (improved)
         channel = video.get('channel', '').lower()
-        known_channels = ['microsoft', 'aws', 'google cloud', 'pluralsight', 'freecodec camp']
-        if any(known in channel for known in known_channels):
-            score += 5
+        for priority_channel in config.PRIORITY_CHANNELS:
+            if priority_channel.lower() in channel:
+                score += 8  # Higher bonus for priority channels
+                logger.debug(f"Priority channel bonus for: {channel}")
+                break
 
         scored_videos.append({
             'video': video,
@@ -232,8 +280,9 @@ def analyze_and_rank_videos(videos):
     # Sort by score
     scored_videos.sort(key=lambda x: x['score'], reverse=True)
 
-    # Select 2-4 videos, with max ONE over 20 minutes
+    # Step 4: Select top videos with diversity
     selected = []
+    selected_video_ids = set()
     long_video_count = 0
 
     for item in scored_videos:
@@ -241,7 +290,12 @@ def analyze_and_rank_videos(videos):
             break
 
         video = item['video']
+        video_url = video.get('url', '')
         duration = video['duration_minutes']
+
+        # Skip if already selected (extra safety check)
+        if video_url in selected_video_ids:
+            continue
 
         # Check if this is a long video (20+ min)
         if duration > 20:
@@ -250,13 +304,17 @@ def analyze_and_rank_videos(videos):
             long_video_count += 1
 
         selected.append(video)
+        selected_video_ids.add(video_url)
 
     # Ensure we have at least MIN_VIDEOS
     if len(selected) < config.MIN_VIDEOS:
         # Add more videos regardless of duration rules
         for item in scored_videos:
-            if item['video'] not in selected and len(selected) < config.MIN_VIDEOS:
-                selected.append(item['video'])
+            video = item['video']
+            video_url = video.get('url', '')
+            if video_url not in selected_video_ids and len(selected) < config.MIN_VIDEOS:
+                selected.append(video)
+                selected_video_ids.add(video_url)
 
     logger.info(f"Selected {len(selected)} videos for digest")
     return selected

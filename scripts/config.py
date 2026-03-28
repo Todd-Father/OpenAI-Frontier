@@ -12,45 +12,74 @@ SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'security-training@skills.com')
 SENDER_NAME = 'Security Skills Training'
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# Search configuration - Focus on VIDEO tutorials
+# Search configuration - Focus on TECHNICAL VIDEO tutorials
+# More specific queries to avoid irrelevant content
 SEARCH_QUERIES = [
-    # Access Control & Identity
-    'OIDC tutorial video',
-    'OAuth 2.0 explained video',
-    'Microsoft Entra ID tutorial',
-    'MFA implementation video',
-    'RBAC explained video',
-    # Cloud Platform Security
-    'AWS IAM roles tutorial',
-    'Confluent Cloud security video',
-    'Databricks access control tutorial',
-    'Azure AD integration video',
-    # Data Security
-    'data encryption tutorial',
-    'secrets management best practices video',
-    'cloud data security video'
+    # Access Control & Identity - Technical focus
+    'OIDC OpenID Connect authentication tutorial',
+    'OAuth 2.0 authorization flow explained',
+    'Microsoft Entra ID conditional access tutorial',
+    'multi-factor authentication MFA implementation',
+    'RBAC role-based access control cloud',
+    # Cloud Platform Security - Specific platforms
+    'AWS IAM roles policies tutorial',
+    'AWS IAM cross-account access',
+    'Confluent Cloud security RBAC',
+    'Databricks Unity Catalog access control',
+    'Azure AD enterprise integration',
+    # Data Security - Technical implementations
+    'cloud data encryption key management',
+    'secrets management vault tutorial',
+    'zero trust security architecture'
 ]
 
-# Authoritative video sources (YouTube channels & platforms)
-AUTHORITATIVE_SOURCES = [
-    # Microsoft Official
-    'youtube.com/microsoft',
-    'learn.microsoft.com',
-    'techcommunity.microsoft.com',
-    # AWS Official
-    'youtube.com/aws',
-    'aws.amazon.com',
-    # Security Training Platforms
-    'youtube.com',
-    'pluralsight.com',
-    'linkedin.com/learning',
-    'udemy.com',
-    # Vendor Channels
-    'confluent.io',
-    'databricks.com',
-    # Security Experts
-    'youtube.com/c/NetworkChuck',
-    'youtube.com/c/DavidBombal'
+# Authoritative video sources - Priority channels for security training
+# These channels get bonus points in the ranking algorithm
+PRIORITY_CHANNELS = [
+    # Microsoft Official - High Priority
+    'microsoft security',
+    'microsoft mechanics',
+    'microsoft azure',
+    'microsoft 365',
+    'azure',
+    # AWS Official - High Priority
+    'aws',
+    'amazon web services',
+    'aws online tech talks',
+    # Security Training Platforms - High Priority
+    'pluralsight',
+    'linkedin learning',
+    'udemy',
+    'coursera',
+    # Vendor Channels - Medium Priority
+    'confluent',
+    'databricks',
+    'okta',
+    'auth0',
+    # Tech Education - Medium Priority
+    'freecodeccamp',
+    'techworld with nana',
+    'cloud academy',
+    # Security Experts - Medium Priority
+    'networkchuck',
+    'david bombal',
+    'john hammond'
+]
+
+# Channels/keywords to EXCLUDE - Filter out non-technical content
+EXCLUDED_KEYWORDS = [
+    'interview',
+    'career',
+    'resume',
+    'job',
+    'salary',
+    'certification exam',
+    'study tips',
+    'motivational',
+    'lifestyle',
+    'vlog',
+    'reaction',
+    'unboxing'
 ]
 
 # Learning limits - Keep it manageable!
