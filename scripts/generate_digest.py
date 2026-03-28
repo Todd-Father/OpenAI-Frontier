@@ -430,45 +430,67 @@ def send_email_via_sendgrid(digest, date, recipient):
         <style>
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                line-height: 1.6;
-                color: #333;
+                line-height: 1.7;
+                color: #1a1a1a;
                 max-width: 800px;
                 margin: 0 auto;
                 padding: 20px;
+                background-color: #ffffff;
             }}
             h1 {{
                 color: #2563eb;
-                border-bottom: 3px solid #3b82f6;
+                border-bottom: 3px solid #2563eb;
                 padding-bottom: 10px;
+                font-size: 28px;
             }}
             h2 {{
-                color: #1e40af;
+                color: #2c3e50;
                 margin-top: 30px;
+                font-size: 22px;
+                font-weight: 600;
             }}
             h3 {{
-                color: #1e3a8a;
+                color: #000000;
+                font-size: 18px;
+                font-weight: 600;
+                margin-top: 20px;
+            }}
+            p {{
+                color: #2c3e50;
+                margin: 10px 0;
+            }}
+            strong {{
+                color: #1a1a1a;
+                font-weight: 600;
             }}
             a {{
-                color: #2563eb;
+                color: #0066cc;
                 text-decoration: none;
+                font-weight: 500;
             }}
             a:hover {{
                 text-decoration: underline;
+                color: #004499;
             }}
             .video-card {{
-                background: #f8fafc;
-                border-left: 4px solid #3b82f6;
+                background: #f9f9f9;
+                border-left: 4px solid #2563eb;
                 padding: 15px;
                 margin: 20px 0;
                 border-radius: 5px;
             }}
             .badge {{
-                background: #dbeafe;
-                color: #1e40af;
-                padding: 4px 8px;
+                background: #e8f4f8;
+                color: #2c3e50;
+                padding: 5px 10px;
                 border-radius: 4px;
                 font-size: 0.9em;
-                font-weight: bold;
+                font-weight: 600;
+            }}
+            hr {{
+                border: none;
+                border-top: 1px solid #e0e0e0;
+                margin: 25px 0;
             }}
         </style>
     </head>
