@@ -2,10 +2,10 @@ name: Security Skills Training Digest
 
 on:
   schedule:
-    # Runs at 7:00 AM EST (12:00 UTC) Friday, Saturday, Sunday
+    # Runs at 6:00 AM EST (12:00 UTC) Friday, Saturday, Sunday
     # Friday=5, Saturday=6, Sunday=0
-    # EST (winter): 7am EST = 12pm UTC
-    # EDT (summer): 7am EDT = 11am UTC
+    # EST (winter): 6am EST = 12pm UTC
+    # EDT (summer): 6am EDT = 11am UTC
     - cron: '0 12 * * 0,5,6'
 
   workflow_dispatch:  # Allow manual trigger for testing
