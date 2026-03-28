@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """
-EDA Daily Digest Generator
+Security Skills Training Digest Generator
 
-This script searches for event driven architecture news, analyzes and ranks stories,
-generates a digest, saves it locally, and emails it via SendGrid.
+Searches for security training videos, filters by duration, ranks by quality,
+and sends curated digest via email 3x per week (Fri/Sat/Sun).
 """
 
 import os
 import sys
-import html
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 import requests
 from dotenv import load_dotenv
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Content
-import markdown
+from sendgrid.helpers.mail import Mail
+import isodate  # For parsing ISO 8601 duration
 
 # Configure logging
 logging.basicConfig(
@@ -25,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file (for local testing)
+# Load environment variables
 load_dotenv()
 
 # Import configuration
@@ -38,9 +37,6 @@ def validate_config():
         if not hasattr(config, 'SEARCH_QUERIES'):
             logger.error("Missing SEARCH_QUERIES in config")
             return False
-        if not hasattr(config, 'AUTHORITATIVE_SOURCES'):
-            logger.error("Missing AUTHORITATIVE_SOURCES in config")
-            return False
         logger.info("Configuration validated successfully")
         return True
     except AttributeError as e:
@@ -48,304 +44,457 @@ def validate_config():
         return False
 
 
-def search_EDA_news():
+def search_training_videos():
     """
-    Search for recent event driven architecture news articles specifically around security related to confluent cloud, kafka api, flink and kong.
+    Search for security training videos on YouTube.
 
-    Uses web search to find articles from the past 24-48 hours.
-    Returns list of articles with title, URL, source, date, and snippet.
+    Returns list of videos with title, URL, duration, channel, and description.
     """
-    logger.info("Searching for event driven architecture news...")
+    logger.info("Searching for security training videos...")
 
-    articles = []
+    videos = []
+    youtube_api_key = os.getenv('YOUTUBE_API_KEY')
 
-    # Method 1: Use NewsAPI (requires API key)
-    newsapi_key = os.getenv('NEWSAPI_KEY')
-    if newsapi_key:
-        articles.extend(_search_newsapi(newsapi_key))
+    if youtube_api_key:
+        videos.extend(_search_youtube(youtube_api_key))
     else:
-        logger.warning("NEWSAPI_KEY not configured in environment variables")
+        logger.warning("YOUTUBE_API_KEY not configured, using fallback")
+        videos = _get_fallback_videos()
 
-    # Method 2: Manual RSS/scraping fallback (add your preferred sources)
-    # This is a fallback if NewsAPI is not configured
-    if not articles:
-        logger.warning("No news API configured. Using fallback method...")
-        articles = _get_fallback_articles()
-
-    logger.info(f"Found {len(articles)} articles")
-    return articles
+    logger.info(f"Found {len(videos)} videos")
+    return videos
 
 
-def _search_newsapi(api_key):
-    """Search using NewsAPI"""
-    articles = []
-
-    # Calculate date range (past 2 days to catch more stories)
-    to_date = datetime.now(timezone.utc)
-    from_date = to_date - timedelta(days=2)
-
-    url = "https://newsapi.org/v2/everything"
+def _search_youtube(api_key):
+    """Search YouTube Data API for training videos."""
+    videos = []
+    base_url = "https://www.googleapis.com/youtube/v3/search"
 
     for query in config.SEARCH_QUERIES:
         params = {
+            'part': 'snippet',
             'q': query,
-            'from': from_date.strftime('%Y-%m-%d'),
-            'to': to_date.strftime('%Y-%m-%d'),
-            'language': 'en',
-            'sortBy': 'publishedAt',
-            'apiKey': api_key,
-            'pageSize': 10
+            'type': 'video',
+            'videoDuration': 'medium',  # 4-20 minutes
+            'relevanceLanguage': 'en',
+            'order': 'relevance',
+            'maxResults': 5,
+            'key': api_key
         }
 
         try:
-            response = requests.get(url, params=params, timeout=10)
+            response = requests.get(base_url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
 
-            if data.get('status') == 'ok':
-                for article in data.get('articles', []):
-                    articles.append({
-                        'title': article.get('title', 'No title'),
-                        'url': article.get('url', ''),
-                        'source': article.get('source', {}).get('name', 'Unknown'),
-                        'published_at': article.get('publishedAt', ''),
-                        'description': article.get('description', ''),
-                        'content': article.get('content', '')
-                    })
+            # Get video IDs to fetch duration
+            video_ids = [item['id']['videoId'] for item in data.get('items', [])]
+
+            if video_ids:
+                # Fetch video details including duration
+                video_details = _get_video_details(api_key, video_ids)
+                videos.extend(video_details)
+
         except requests.exceptions.RequestException as e:
-            logger.error(f"Request error searching NewsAPI for '{query}': {e}")
-            continue
-        except ValueError as e:
-            logger.error(f"JSON parsing error for '{query}': {e}")
-            continue
-        except Exception as e:
-            logger.error(f"Unexpected error searching NewsAPI for '{query}': {e}", exc_info=True)
+            logger.error(f"Error searching YouTube for '{query}': {e}")
             continue
 
-    return articles
+    return videos
 
 
-def _get_fallback_articles():
-    """
-    Fallback method when no news API is configured.
-    Returns placeholder articles with instructions.
-    """
+def _get_video_details(api_key, video_ids):
+    """Get detailed information about videos including duration."""
+    details_url = "https://www.googleapis.com/youtube/v3/videos"
+    params = {
+        'part': 'snippet,contentDetails,statistics',
+        'id': ','.join(video_ids),
+        'key': api_key
+    }
+
+    try:
+        response = requests.get(details_url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        videos = []
+        for item in data.get('items', []):
+            # Parse ISO 8601 duration (PT15M33S format)
+            duration_iso = item['contentDetails']['duration']
+            duration_seconds = int(isodate.parse_duration(duration_iso).total_seconds())
+            duration_minutes = duration_seconds // 60
+
+            video = {
+                'title': item['snippet']['title'],
+                'url': f"https://www.youtube.com/watch?v={item['id']}",
+                'channel': item['snippet']['channelTitle'],
+                'description': item['snippet']['description'][:200],  # First 200 chars
+                'published_at': item['snippet']['publishedAt'],
+                'duration_minutes': duration_minutes,
+                'view_count': int(item['statistics'].get('viewCount', 0)),
+                'like_count': int(item['statistics'].get('likeCount', 0)),
+                'thumbnail': item['snippet']['thumbnails']['medium']['url']
+            }
+            videos.append(video)
+
+        return videos
+
+    except Exception as e:
+        logger.error(f"Error fetching video details: {e}")
+        return []
+
+
+def _get_fallback_videos():
+    """Fallback when YouTube API is not configured."""
     return [{
-        'title': 'NewsAPI Configuration Required',
-        'url': 'https://newsapi.org',
-        'source': 'System',
-        'published_at': datetime.now(timezone.utc).isoformat(),
-        'description': 'To receive real-time Event Driven Architecture news, please configure NewsAPI. See SETUP.md for instructions.',
-        'content': 'Get your free API key at https://newsapi.org and add it to your GitHub Secrets as NEWSAPI_KEY.'
+        'title': 'YouTube API Configuration Required',
+        'url': 'https://console.cloud.google.com/apis/library/youtube.googleapis.com',
+        'channel': 'System',
+        'description': 'To receive real-time video curation, configure YOUTUBE_API_KEY. Get a free API key from Google Cloud Console.',
+        'published_at': datetime.now().isoformat(),
+        'duration_minutes': 0,
+        'view_count': 0,
+        'like_count': 0,
+        'thumbnail': ''
     }]
 
 
-def analyze_and_rank_stories(articles):
+def analyze_and_rank_videos(videos):
     """
-    Analyze and rank articles by relevance.
+    Analyze and rank videos by quality and relevance.
 
     Scoring criteria:
-    - Mentions "OpenAI Frontier" explicitly (+10)
-    - From authoritative source (+5)
-    - Recent (past 24h: +5, past 48h: +3)
-    - Long content (+3)
-    - Contains keywords: enterprise, EDA, security, Confluent Cloud, Kafka (+2 each)
+    - Duration preference: 5-15 min (+10), 15-20 min (+5), 20-30 min (+3)
+    - View count: High views (+5)
+    - Like ratio: Good engagement (+5)
+    - Recency: Recent videos (+3)
+    - Channel authority: Known training channels (+5)
 
-    Returns top MIN_STORIES to MAX_STORIES ranked articles.
+    Returns 2-4 videos, with max ONE video over 20 minutes.
     """
-    logger.info(f"Analyzing and ranking {len(articles)} articles...")
+    logger.info(f"Analyzing and ranking {len(videos)} videos...")
 
-    scored_articles = []
+    scored_videos = []
 
-    for article in articles:
+    for video in videos:
         score = 0
+        duration = video['duration_minutes']
 
-        # Combine title, description, and content for analysis
-        title = article.get('title') or ''
-        description = article.get('description') or ''
-        content = article.get('content') or ''
-        full_text = f"{title} {description} {content}".lower()
-
-        # Check for "OpenAI Frontier" mention (high priority)
-        if 'openai frontier' in full_text:
+        # Duration scoring - prefer 5-15 min
+        if 5 <= duration <= 15:
             score += 10
-        elif 'frontier' in full_text and 'openai' in full_text:
-            score += 7  # Both words present but not together
+        elif 15 < duration <= 20:
+            score += 5
+        elif 20 < duration <= 30:
+            score += 3
+        elif duration < 5:
+            score += 2  # Too short
+        else:
+            score -= 5  # Too long (over 30 min)
 
-        # Check if from authoritative source
-        source_domain = _extract_domain(article.get('url', ''))
-        try:
-            authoritative_sources = getattr(config, 'AUTHORITATIVE_SOURCES', [])
-            if any(auth_source in source_domain for auth_source in authoritative_sources):
-                score += 5
-        except (TypeError, AttributeError) as e:
-            logger.debug(f"Error checking authoritative sources: {e}")
-
-        # Check recency
-        published_at = article.get('published_at', '')
-        if published_at:
-            try:
-                pub_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
-                now = datetime.now(timezone.utc)
-                hours_old = (now - pub_date).total_seconds() / 3600
-
-                if hours_old <= 24:
-                    score += 5
-                elif hours_old <= 48:
-                    score += 3
-            except ValueError as e:
-                logger.debug(f"Could not parse date '{published_at}': {e}")
-            except TypeError as e:
-                logger.debug(f"Type error processing date '{published_at}': {e}")
-
-        # Check content length
-        if len(content) > 500:
+        # View count scoring
+        views = video.get('view_count', 0)
+        if views > 100000:
+            score += 5
+        elif views > 10000:
             score += 3
 
-        # Check for keywords
-        keywords = ['enterprise', 'eda', 'security', 'confluent', 'kafka', 'event-driven']
-        for keyword in keywords:
-            if keyword in full_text:
-                score += 2
+        # Engagement scoring (like ratio)
+        likes = video.get('like_count', 0)
+        if views > 0 and likes > 0:
+            like_ratio = likes / views
+            if like_ratio > 0.05:  # 5%+ like ratio is good
+                score += 5
+            elif like_ratio > 0.02:
+                score += 3
 
-        scored_articles.append({
-            'article': article,
+        # Recency scoring
+        try:
+            published = datetime.fromisoformat(video['published_at'].replace('Z', '+00:00'))
+            days_old = (datetime.now(published.tzinfo) - published).days
+            if days_old < 180:  # Within 6 months
+                score += 3
+            elif days_old < 365:  # Within 1 year
+                score += 1
+        except:
+            pass
+
+        # Known training channels
+        channel = video.get('channel', '').lower()
+        known_channels = ['microsoft', 'aws', 'google cloud', 'pluralsight', 'freecodec camp']
+        if any(known in channel for known in known_channels):
+            score += 5
+
+        scored_videos.append({
+            'video': video,
             'score': score
         })
 
-    # Sort by score and return top articles
-    scored_articles.sort(key=lambda x: x['score'], reverse=True)
-    max_stories = getattr(config, 'MAX_STORIES', 10)
-    top_articles = scored_articles[:max_stories]
+    # Sort by score
+    scored_videos.sort(key=lambda x: x['score'], reverse=True)
 
-    return [item['article'] for item in top_articles]
+    # Select 2-4 videos, with max ONE over 20 minutes
+    selected = []
+    long_video_count = 0
+
+    for item in scored_videos:
+        if len(selected) >= config.MAX_VIDEOS:
+            break
+
+        video = item['video']
+        duration = video['duration_minutes']
+
+        # Check if this is a long video (20+ min)
+        if duration > 20:
+            if long_video_count >= 1:
+                continue  # Skip, already have one long video
+            long_video_count += 1
+
+        selected.append(video)
+
+    # Ensure we have at least MIN_VIDEOS
+    if len(selected) < config.MIN_VIDEOS:
+        # Add more videos regardless of duration rules
+        for item in scored_videos:
+            if item['video'] not in selected and len(selected) < config.MIN_VIDEOS:
+                selected.append(item['video'])
+
+    logger.info(f"Selected {len(selected)} videos for digest")
+    return selected
 
 
-def _extract_domain(url):
-    """Extract domain from URL"""
+def generate_digest_markdown(videos, date):
+    """Generate formatted markdown digest for video content."""
+    logger.info(f"Generating digest for {len(videos)} videos...")
+
+    date_str = date.strftime('%B %d, %Y')
+    day_of_week = date.strftime('%A')
+
+    digest = f"""# 🎓 Security Skills Training Digest
+**{day_of_week}, {date_str}**
+
+---
+
+## Today's Training Videos
+
+"""
+
+    for i, video in enumerate(videos, 1):
+        title = video['title']
+        url = video['url']
+        channel = video['channel']
+        duration = video['duration_minutes']
+        description = video.get('description', 'No description available')
+
+        # Duration badge
+        if duration <= 10:
+            duration_badge = "⚡ Quick ({}m)".format(duration)
+        elif duration <= 20:
+            duration_badge = "📺 Standard ({}m)".format(duration)
+        else:
+            duration_badge = "🎬 Deep Dive ({}m)".format(duration)
+
+        digest += f"""### {i}. {title}
+
+**Channel:** {channel} | {duration_badge}
+
+**Watch:** [{url}]({url})
+
+**Overview:** {description}
+
+**Why This Matters:** Build foundational skills in access control and identity management that directly apply to AWS, Confluent Cloud, and Databricks integration scenarios.
+
+---
+
+"""
+
+    # Add learning tips
+    digest += f"""
+## 💡 Learning Tips
+
+- **Take Notes:** Key concepts, commands, and configurations
+- **Hands-on Practice:** Try examples in your own AWS/Azure environment
+- **Connect the Dots:** Think about how this applies to your Confluent/Databricks work
+- **Pace Yourself:** Don't rush - mastery comes from practice
+
+---
+
+## 📚 This Week's Focus
+
+Building towards RBAC role design for multi-cloud integration:
+- Week 1-2: Authentication & Authorization fundamentals
+- Week 3-4: OIDC/OAuth flows and Entra ID configuration
+- Week 5-6: Practical RBAC for AWS ↔ Confluent Cloud
+- Week 7-8: Advanced: Just-in-time access & Zero Trust
+
+---
+
+*Generated on {datetime.now().strftime('%Y-%m-%d at %H:%M UTC')}*
+
+**Next Digest:** See you next session! 🚀
+"""
+
+    return digest
+
+
+def save_digest_locally(digest, date):
+    """Save digest to local training-digests/ folder."""
+    logger.info("Saving digest locally...")
+
+    digest_folder = Path(config.DIGEST_FOLDER)
+    digest_folder.mkdir(exist_ok=True)
+
+    filename = f"{date.strftime('%Y-%m-%d')}.md"
+    filepath = digest_folder / filename
+
     try:
-        from urllib.parse import urlparse
-        parsed = urlparse(url)
-        return parsed.netloc.lower()
-    except (ValueError, AttributeError) as e:
-        logger.debug(f"Could not extract domain from URL '{url}': {e}")
-        return ''
+        filepath.write_text(digest, encoding='utf-8')
+        logger.info(f"Digest saved to: {filepath}")
+        return str(filepath)
     except Exception as e:
-        logger.error(f"Unexpected error extracting domain from '{url}': {e}", exc_info=True)
-        return ''
+        logger.error(f"Error saving digest: {e}")
+        return None
 
 
-def generate_digest_html(articles):
-    """
-    Generate HTML digest from articles.
-    
-    Sanitizes content to prevent HTML injection.
-    """
-    if not articles:
-        return '<p>No articles found.</p>'
+def send_email_via_sendgrid(digest, date, recipient):
+    """Send digest email via SendGrid."""
+    logger.info(f"Sending email to {recipient}...")
 
-    html_parts = [
-        '<h1>Event Driven Architecture Digest</h1>',
-        f'<p>Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>',
-        '<ul>'
-    ]
-
-    for article in articles:
-        title = html.escape(article.get('title', 'No title'))
-        url = html.escape(article.get('url', ''))
-        source = html.escape(article.get('source', 'Unknown'))
-        description = html.escape(article.get('description', ''))
-
-        html_parts.append(
-            f'<li><a href="{url}">{title}</a> ({source})<br/>{description}</li>'
-        )
-
-    html_parts.append('</ul>')
-    
-    return '\n'.join(html_parts)
-
-
-def send_digest_email(digest_html, recipient_email):
-    """
-    Send digest via SendGrid email.
-    """
-    # Validate environment variables
-    api_key = os.getenv('SENDGRID_API_KEY')
-    from_email = os.getenv('SENDER_EMAIL')
-
+    api_key = config.SENDGRID_API_KEY
     if not api_key:
-        logger.error("SENDGRID_API_KEY not configured in environment variables")
+        logger.error("SENDGRID_API_KEY not set. Email not sent.")
         return False
-    if not from_email:
-        logger.error("FROM_EMAIL not configured in environment variables")
-        return False
+
+    # Create HTML version
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }}
+            h1 {{
+                color: #2563eb;
+                border-bottom: 3px solid #3b82f6;
+                padding-bottom: 10px;
+            }}
+            h2 {{
+                color: #1e40af;
+                margin-top: 30px;
+            }}
+            h3 {{
+                color: #1e3a8a;
+            }}
+            a {{
+                color: #2563eb;
+                text-decoration: none;
+            }}
+            a:hover {{
+                text-decoration: underline;
+            }}
+            .video-card {{
+                background: #f8fafc;
+                border-left: 4px solid #3b82f6;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }}
+            .badge {{
+                background: #dbeafe;
+                color: #1e40af;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.9em;
+                font-weight: bold;
+            }}
+        </style>
+    </head>
+    <body>
+        <div>{digest.replace('### ', '<h3>').replace('## ', '<h2>').replace('# ', '<h1>')}</div>
+    </body>
+    </html>
+    """
+
+    subject = config.EMAIL_SUBJECT_TEMPLATE.format(date=date.strftime('%A, %B %d'))
+
+    message = Mail(
+        from_email=config.SENDER_EMAIL,
+        to_emails=recipient,
+        subject=subject,
+        html_content=html_content
+    )
 
     try:
         sg = SendGridAPIClient(api_key)
-        message = Mail(
-            from_email=from_email,
-            to_emails=recipient_email,
-            subject='Event Driven Architecture Daily Digest',
-            html_content=digest_html
-        )
         response = sg.send(message)
-        logger.info(f"Email sent successfully to {recipient_email}. Status code: {response.status_code}")
+        logger.info(f"Email sent successfully! Status code: {response.status_code}")
         return True
-    except KeyError as e:
-        logger.error(f"Missing environment variable: {e}")
-        return False
     except Exception as e:
-        logger.error(f"Error sending email to {recipient_email}: {e}", exc_info=True)
+        logger.error(f"Error sending email: {e}")
         return False
 
 
-if __name__ == '__main__':
-    try:
-        # Validate configuration
-        if not validate_config():
-            logger.error("Configuration validation failed. Exiting.")
-            sys.exit(1)
+def main():
+    """Main execution function."""
+    logger.info("=" * 60)
+    logger.info("Security Skills Training Digest Generator")
+    logger.info("=" * 60)
 
-        # Search for articles
-        articles = search_EDA_news()
-        if not articles:
-            logger.warning("No articles found")
-        
-        # Analyze and rank articles
-        ranked_articles = analyze_and_rank_stories(articles)
-        logger.info(f"Ranked {len(ranked_articles)} articles")
+    today = datetime.now()
+    logger.info(f"Date: {today.strftime('%Y-%m-%d %H:%M')}")
 
-        # Generate digest HTML
-        digest_html = generate_digest_html(ranked_articles)
-        
-        # Save locally as markdown
-        try:
-            # Create daily-digests directory if it doesn't exist
-            digest_folder = Path('daily-digests')
-            digest_folder.mkdir(exist_ok=True)
-
-            # Save as markdown with date in filename
-            date_str = datetime.now().strftime('%Y-%m-%d')
-            digest_path = digest_folder / f"{date_str}.md"
-
-            # Convert HTML to markdown for storage
-            digest_md = f"# Event Driven Architecture Daily Digest\n\n{digest_html}\n"
-
-            with open(digest_path, 'w', encoding='utf-8') as f:
-                f.write(digest_md)
-            logger.info(f"Digest saved successfully to {digest_path}")
-        except IOError as e:
-            logger.error(f"Error writing digest file: {e}")
-            sys.exit(1)
-            
-        # Send email if configured
-        recipient = os.getenv('RECIPIENT_EMAIL')
-        if recipient:
-            logger.info(f"Sending digest to {recipient}")
-            send_digest_email(digest_html, recipient)
-        else:
-            logger.info("RECIPIENT_EMAIL not configured, skipping email send")
-            
-    except Exception as e:
-        logger.critical(f"Fatal error: {e}", exc_info=True)
+    # Validate configuration
+    if not validate_config():
+        logger.error("Configuration validation failed. Exiting.")
         sys.exit(1)
+
+    # Step 1: Search for training videos
+    videos = search_training_videos()
+
+    if not videos:
+        logger.error("No videos found. Exiting.")
+        sys.exit(1)
+
+    # Step 2: Analyze and rank
+    top_videos = analyze_and_rank_videos(videos)
+
+    if not top_videos:
+        logger.error("No relevant videos found. Exiting.")
+        sys.exit(1)
+
+    # Step 3: Generate digest
+    digest = generate_digest_markdown(top_videos, today)
+
+    # Step 4: Save locally
+    saved_path = save_digest_locally(digest, today)
+
+    # Step 5: Send email
+    recipient = config.RECIPIENT_EMAIL
+    email_sent = send_email_via_sendgrid(digest, today, recipient)
+
+    # Summary
+    logger.info("=" * 60)
+    logger.info("SUMMARY")
+    logger.info("=" * 60)
+    logger.info(f"Videos found: {len(videos)}")
+    logger.info(f"Videos selected: {len(top_videos)}")
+    logger.info(f"Digest saved: {'Yes' if saved_path else 'No'}")
+    logger.info(f"Email sent: {'Yes' if email_sent else 'No'}")
+
+    if email_sent:
+        logger.info(f"✅ Training digest successfully sent to {recipient}")
+    else:
+        logger.warning(f"⚠️  Digest saved locally but email failed")
+        if saved_path:
+            logger.info(f"   View digest at: {saved_path}")
+
+    logger.info("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
