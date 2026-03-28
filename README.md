@@ -1,6 +1,6 @@
-# OpenAI Frontier Security & Daily Digest
+# Security Skills Training Digest
 
-Comprehensive security readiness documentation and automated news digest for the OpenAI Frontier enterprise partnership.
+Automated curation of security training videos delivered 3x per week to build progressive skills in access control, identity management, and cloud security.
 
 ---
 
@@ -8,9 +8,13 @@ Comprehensive security readiness documentation and automated news digest for the
 
 This repository contains:
 
-1. **Security Readiness Documentation** - Comprehensive security questionnaire and assessment framework for OpenAI Frontier partnership onboarding
-2. **Daily Digest Automation** - Automated system that delivers top OpenAI Frontier news to your inbox every weekday at 7am
-3. **Thought Leaders Tracking** - Curated list of top AI security experts and resources to follow
+1. **Security Skills Training Digest** - Curated short training videos (5-15 min) delivered Friday, Saturday, Sunday at 7am
+2. **Progressive Learning Tracks** - Structured content that builds on previous knowledge
+3. **Focus Areas:**
+   - Access Control (OIDC, OAuth 2.0, MFA, RBAC)
+   - Identity Management (Microsoft Entra ID, Azure AD)
+   - Cloud Integration (AWS IAM, Confluent Cloud, Databricks)
+   - Data Security fundamentals
 
 ---
 
@@ -28,17 +32,17 @@ This repository contains:
 
 ---
 
-## 📰 Daily Digest Features
+## 🎓 Training Digest Features
 
 ### What You Get
 
-Every weekday at 7am EST, receive an email digest containing:
+**Friday, Saturday, Sunday at 7am EST**, receive curated training content:
 
-- **3-7 Top Stories** about OpenAI Frontier
-- **Quick Read Format:** Title, source, link, summary
-- **Why You Should Care:** Relevance to your organization
-- **What This Means:** Strategic implications
-- **Archived Locally:** Saved to `daily-digests/` folder
+- **2-4 Short Videos** (5-15 min each) - Manageable, focused learning
+- **Progressive Learning Path** - Builds on previous skills
+- **Practical Focus:** Real-world scenarios (AWS↔Confluent, Databricks, on-prem integration)
+- **Key Topics:** OIDC, MFA, Entra ID, RBAC role design
+- **Archived Locally:** Saved to `training-digests/` folder
 
 ### How It Works
 

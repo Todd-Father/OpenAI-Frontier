@@ -1,5 +1,5 @@
 """
-Configuration settings for OpenAI Frontier Daily Digest
+Configuration settings for Security Skills Training Digest
 """
 import os
 from datetime import datetime
@@ -8,61 +8,76 @@ from datetime import datetime
 RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
 if not RECIPIENT_EMAIL:
     raise ValueError("RECIPIENT_EMAIL environment variable not set")
-SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'digest@openai-frontier.com')
-SENDER_NAME = 'Event Driven Architecture Digest'
+SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'security-training@skills.com')
+SENDER_NAME = 'Security Skills Training'
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# Search configuration
+# Search configuration - Focus on VIDEO tutorials
 SEARCH_QUERIES = [
-    'event driven architecture news',
-    'event driven architecture enterprise',
-    'event driven architecture security',
-    'Kafka security news',
-    'Confluent Cloud updates',
-    'AWS EventBridge news',
-    'Microsoft Entra ID updates',
-    'Zero Trust Architecture news',
-    'Flink security updates',
-    'Kong API gateway news'
+    # Access Control & Identity
+    'OIDC tutorial video',
+    'OAuth 2.0 explained video',
+    'Microsoft Entra ID tutorial',
+    'MFA implementation video',
+    'RBAC explained video',
+    # Cloud Platform Security
+    'AWS IAM roles tutorial',
+    'Confluent Cloud security video',
+    'Databricks access control tutorial',
+    'Azure AD integration video',
+    # Data Security
+    'data encryption tutorial',
+    'secrets management best practices video',
+    'cloud data security video'
 ]
 
-# Authoritative sources (higher priority)
+# Authoritative video sources (YouTube channels & platforms)
 AUTHORITATIVE_SOURCES = [
-    # EDA-specific sources
-    'confluent.io',
-    'kafka.apache.org',
-    'aws.amazon.com',
-    'aws-blog',
-    'konghq.com',
-    'flink.apache.org',
-    # Microsoft/Identity sources
-    'microsoft.com',
+    # Microsoft Official
+    'youtube.com/microsoft',
     'learn.microsoft.com',
     'techcommunity.microsoft.com',
-    # Security/ZTA sources
-    'nist.gov',
-    'csrc.nist.gov',
-    # General tech news
-    'techcrunch.com',
-    'theverge.com',
-    'arstechnica.com',
-    'wired.com',
-    'forbes.com',
-    'reuters.com',
-    'bloomberg.com',
-    'venturebeat.com',
-    'zdnet.com',
-    'cnbc.com',
-    'infoq.com',
-    'thenewstack.io'
+    # AWS Official
+    'youtube.com/aws',
+    'aws.amazon.com',
+    # Security Training Platforms
+    'youtube.com',
+    'pluralsight.com',
+    'linkedin.com/learning',
+    'udemy.com',
+    # Vendor Channels
+    'confluent.io',
+    'databricks.com',
+    # Security Experts
+    'youtube.com/c/NetworkChuck',
+    'youtube.com/c/DavidBombal'
 ]
 
-# Story limits
-MIN_STORIES = 5
-MAX_STORIES = 10
+# Learning limits - Keep it manageable!
+MIN_VIDEOS = 2
+MAX_VIDEOS = 4
 
 # Local storage
-DIGEST_FOLDER = 'daily-digests'
+DIGEST_FOLDER = 'training-digests'
 
 # Email template configuration
-EMAIL_SUBJECT_TEMPLATE = "Event Driven Architecture Daily Digest - {date}"
+EMAIL_SUBJECT_TEMPLATE = "🎓 Security Skills Training - {date}"
+
+# Progressive learning tracks
+LEARNING_TRACKS = {
+    'foundations': [
+        'Authentication basics',
+        'Authorization concepts',
+        'Identity providers overview'
+    ],
+    'intermediate': [
+        'OIDC and OAuth 2.0 flow',
+        'Entra ID configuration',
+        'RBAC role design'
+    ],
+    'advanced': [
+        'Multi-cloud identity federation',
+        'Just-in-time access',
+        'Zero Trust implementation'
+    ]
+}
