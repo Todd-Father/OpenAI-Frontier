@@ -143,7 +143,7 @@ This document lists all the services and vendors used to set up the Security Ski
 SENDGRID_API_KEY    = SG.xxxxxxxx... (SendGrid API key)
 SENDER_EMAIL        = toddfathor@whollyground.io
 RECIPIENT_EMAIL     = tbeavers12@gmail.com
-YOUTUBE_API_KEY     = AIzaSyD_9ewaiOyMaWEtBUR7v1-9NyI5gpsKO7s
+YOUTUBE_API_KEY     = lol-9NyI5gpsKO2247x
 ```
 
 **When to access:**
